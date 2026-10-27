@@ -6,51 +6,87 @@ on:
   pull_request:
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   nix-quality:
-    name: Nix syntax, quality, and workflow linting
+    name: Nix syntax and code quality
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Check Nix syntax
-        run: nix-instantiate --parse configuration.nix > /dev/null
-
-      - name: Run Nix quality checks and actionlint
+      - name: Check Nix syntax and code quality
         shell: bash
         run: |
+          set -uo pipefail
+
           nix shell \
             nixpkgs#statix \
             nixpkgs#deadnix \
             nixpkgs#nixfmt \
             nixpkgs#actionlint \
-            --command bash -euo pipefail -c '
-              echo "Checking GitHub Actions workflow..."
-              actionlint .github/workflows/nixos-devsecops.yml
+            --command bash -c '
+              set -uo pipefail
+              status=0
 
-              echo "Checking Nix code quality..."
-              statix check configuration.nix
-              deadnix --fail configuration.nix
-
-              echo "Checking Nix formatting..."
-              nixfmt configuration.nix
-
-              if ! git diff --quiet -- configuration.nix; then
-                echo "ERROR: configuration.nix needs formatting."
-                git --no-pager diff -- configuration.nix
-                echo "Format it locally with nixfmt configuration.nix."
-                exit 1
+              echo "::group::Nix syntax"
+              if nix-instantiate --parse configuration.nix > /dev/null; then
+                echo "Nix syntax check passed."
+              else
+                echo "::error::Nix syntax check failed."
+                status=1
               fi
+              echo "::endgroup::"
+
+              echo "::group::Statix"
+              if statix check configuration.nix; then
+                echo "Statix check passed."
+              else
+                echo "::error::Statix reported issues."
+                status=1
+              fi
+              echo "::endgroup::"
+
+              echo "::group::Dead code"
+              if deadnix --fail configuration.nix; then
+                echo "Deadnix check passed."
+              else
+                echo "::error::Deadnix reported unused code."
+                status=1
+              fi
+              echo "::endgroup::"
+
+              echo "::group::Nix formatting"
+              if nixfmt < configuration.nix | diff -u configuration.nix -; then
+                echo "Nix formatting check passed."
+              else
+                echo "::error::configuration.nix needs formatting. Run nixfmt configuration.nix locally."
+                status=1
+              fi
+              echo "::endgroup::"
+
+              echo "::group::GitHub Actions workflow lint"
+              if actionlint .github/workflows/nixos-devsecops.yml; then
+                echo "Actionlint check passed."
+              else
+                echo "::error::Actionlint reported workflow issues."
+                status=1
+              fi
+              echo "::endgroup::"
+
+              exit "$status"
             '
 
   workflow-security:
@@ -59,16 +95,15 @@ jobs:
 
     permissions:
       contents: read
-      actions: read
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Run zizmor security audit
-        uses: zizmorcore/zizmor-action@f9597c869b2e67095f9b527070297a13a6efe928
+        uses: zizmorcore/zizmor-action@f9597c869b2e67095f9b527070297a13a6efe928 # v0.7.0
         with:
           advanced-security: "false"
           online-audits: true
@@ -77,14 +112,18 @@ jobs:
     name: Scan for exposed secrets
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+
     steps:
       - name: Checkout full Git history
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v3
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_COMMENTS: "false"
