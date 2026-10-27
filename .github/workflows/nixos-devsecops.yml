@@ -43,9 +43,7 @@ jobs:
 
       - name: Check Nix formatting
         shell: bash
-        run: |
-          nix shell nixpkgs#nixfmt -c nixfmt < configuration.nix | diff -u configuration.nix -
-
+        run: nix shell nixpkgs#nixfmt -c nixfmt --check configuration.nix
       - name: Lint GitHub Actions workflow
         run: |
           nix shell nixpkgs#actionlint -c actionlint .github/workflows/nixos-devsecops.yml
