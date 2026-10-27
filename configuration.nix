@@ -11,9 +11,11 @@
           ];
 
   # Use the GRUB 2 boot loader.
-  boot.loader.grub.enable = true;
-  boot.loader.grub.device = "/dev/sda";
-  boot.loader.grub.useOSProber = true;
+  boot = {
+  loader.grub.enable = true;
+  loader.grub.device = "/dev/sda";
+  loader.grub.useOSProber = true;
+};
 
   networking.hostName = "nixos"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -45,7 +47,10 @@
 
   # Enable the GNOME Desktop Environment.
   services.displayManager.gdm.enable = true;
-  services.desktopManager.gnome.enable = true;
+services.desktopManager.gnome.enable = true;
+services.xserver.xkb = {
+  # Your keyboard settings
+};
 
   # Configure keymap in X11
   services.xserver.xkb = {
