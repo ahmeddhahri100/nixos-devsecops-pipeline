@@ -96,7 +96,10 @@
   users.users."dhahri" = {
     isNormalUser = true;
     description = "dhahri";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+      ];
     packages = with pkgs; [
       git
     ];
