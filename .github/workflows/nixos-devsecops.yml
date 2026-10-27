@@ -6,6 +6,7 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Start with no token permissions.
 permissions: {}
 
 jobs:
@@ -27,67 +28,27 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
 
-      - name: Check Nix syntax and code quality
+      - name: Check Nix syntax
+        run: |
+          nix-instantiate --parse configuration.nix > /dev/null
+          echo "Nix syntax check passed."
+
+      - name: Run Statix
+        run: |
+          nix shell nixpkgs#statix -c statix check configuration.nix
+
+      - name: Run Deadnix
+        run: |
+          nix shell nixpkgs#deadnix -c deadnix --fail configuration.nix
+
+      - name: Check Nix formatting
         shell: bash
         run: |
-          set -uo pipefail
+          nix shell nixpkgs#nixfmt -c nixfmt < configuration.nix | diff -u configuration.nix -
 
-          nix shell \
-            nixpkgs#statix \
-            nixpkgs#deadnix \
-            nixpkgs#nixfmt \
-            nixpkgs#actionlint \
-            --command bash -c '
-              set -uo pipefail
-              status=0
-
-              echo "::group::Nix syntax"
-              if nix-instantiate --parse configuration.nix > /dev/null; then
-                echo "Nix syntax check passed."
-              else
-                echo "::error::Nix syntax check failed."
-                status=1
-              fi
-              echo "::endgroup::"
-
-              echo "::group::Statix"
-              if statix check configuration.nix; then
-                echo "Statix check passed."
-              else
-                echo "::error::Statix reported issues."
-                status=1
-              fi
-              echo "::endgroup::"
-
-              echo "::group::Dead code"
-              if deadnix --fail configuration.nix; then
-                echo "Deadnix check passed."
-              else
-                echo "::error::Deadnix reported unused code."
-                status=1
-              fi
-              echo "::endgroup::"
-
-              echo "::group::Nix formatting"
-              if nixfmt < configuration.nix | diff -u configuration.nix -; then
-                echo "Nix formatting check passed."
-              else
-                echo "::error::configuration.nix needs formatting. Run nixfmt configuration.nix locally."
-                status=1
-              fi
-              echo "::endgroup::"
-
-              echo "::group::GitHub Actions workflow lint"
-              if actionlint .github/workflows/nixos-devsecops.yml; then
-                echo "Actionlint check passed."
-              else
-                echo "::error::Actionlint reported workflow issues."
-                status=1
-              fi
-              echo "::endgroup::"
-
-              exit "$status"
-            '
+      - name: Lint GitHub Actions workflow
+        run: |
+          nix shell nixpkgs#actionlint -c actionlint .github/workflows/nixos-devsecops.yml
 
   workflow-security:
     name: Audit GitHub Actions security
@@ -95,6 +56,7 @@ jobs:
 
     permissions:
       contents: read
+      actions: read
 
     steps:
       - name: Checkout repository
@@ -103,7 +65,7 @@ jobs:
           persist-credentials: false
 
       - name: Run zizmor security audit
-        uses: zizmorcore/zizmor-action@f9597c869b2e67095f9b527070297a13a6efe928 # v0.7.0
+        uses: zizmorcore/zizmor-action@f9597c869b2e67095f9b527070297a13a6efe928
         with:
           advanced-security: "false"
           online-audits: true
