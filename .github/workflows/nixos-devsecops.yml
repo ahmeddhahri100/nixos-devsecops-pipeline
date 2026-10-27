@@ -1,0 +1,32 @@
+
+name: NixOS DevSecOps CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate NixOS configuration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check required files
+        run: |
+          test -f configuration.nix
+          test -f README.md
+          test -f LICENSE
+          echo "Required files are present."
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - name: Check Nix syntax
+        run: nix-instantiate --parse configuration.nix > /dev/null
