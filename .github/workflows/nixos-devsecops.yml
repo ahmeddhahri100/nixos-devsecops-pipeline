@@ -10,23 +10,81 @@ permissions:
   contents: read
 
 jobs:
-  validate:
-    name: Validate NixOS configuration
+  nix-quality:
+    name: Nix syntax, quality, and workflow linting
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Check required files
-        run: |
-          test -f configuration.nix
-          test -f README.md
-          test -f LICENSE
-          echo "Required files are present."
+        uses: actions/checkout@v6
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
+        with:
+          nix_path: nixpkgs=channel:nixos-unstable
 
       - name: Check Nix syntax
         run: nix-instantiate --parse configuration.nix > /dev/null
+
+      - name: Run Nix quality checks and actionlint
+        shell: bash
+        run: |
+          nix shell \
+            nixpkgs#statix \
+            nixpkgs#deadnix \
+            nixpkgs#nixfmt \
+            nixpkgs#actionlint \
+            --command bash -euo pipefail -c '
+              echo "Checking GitHub Actions workflow..."
+              actionlint .github/workflows/nixos-devsecops.yml
+
+              echo "Checking Nix code quality..."
+              statix check configuration.nix
+              deadnix --fail configuration.nix
+
+              echo "Checking Nix formatting..."
+              nixfmt configuration.nix
+
+              if ! git diff --quiet -- configuration.nix; then
+                echo "ERROR: configuration.nix needs formatting."
+                git --no-pager diff -- configuration.nix
+                echo "Format it locally with nixfmt configuration.nix."
+                exit 1
+              fi
+            '
+
+  workflow-security:
+    name: Audit GitHub Actions security
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Run zizmor security audit
+        uses: zizmorcore/zizmor-action@f9597c869b2e67095f9b527070297a13a6efe928
+        with:
+          advanced-security: "false"
+          online-audits: true
+
+  secret-scan:
+    name: Scan for exposed secrets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout full Git history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
