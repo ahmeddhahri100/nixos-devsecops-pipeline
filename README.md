@@ -7,11 +7,23 @@ A DevSecOps project that uses GitHub Actions to check NixOS configuration qualit
 - **NixOS / Nix** — declarative system configuration.
 - **GitHub Actions** — automated CI pipeline.
 - **Statix** — Nix code quality.
+• Official Docs / Repo: The primary source is the GitHub repository: https://github.com/oppiliappan/statix.
+• Key Info: It lints Nix code for antipatterns and can auto-fix them (statix check, statix fix).
 - **Deadnix** — unused Nix code detection.
+• Official Source: Available via the NixOS package search or its GitHub repository: https://github.com/astro/deadnix.
+• Key Info: Scans .nix files to find and help remove unused code.‌
 - **nixfmt** — Nix formatting.
+• Official Docs / Repo: The official repository is on GitHub: https://github.com/nixos/nixfmt.‌
+• Key Info: It is the official formatter for the Nix language, maintained by the Nix formatting team.‌
 - **actionlint** — GitHub Actions linting.
+• Official Docs / Source: The Go package documentation serves as a central reference: https://pkg.go.dev/github.com/rhysd/actionlint.‌
+• Key Info: A static checker that validates workflow syntax, expressions, and integrates security checks (like shellcheck).‌
 - **zizmor** — GitHub Actions security auditing.
+• Official Docs: The dedicated documentation site is https://docs.zizmor.sh/.‌
+• Key Info: A static analysis tool for GitHub Actions that finds security issues like template injection, credential leakage, and excessive permissions.‌
 - **Gitleaks** — secret scanning.
+• Official Docs / Source: The Go package documentation covers usage and options: https://pkg.go.dev/github.com/zricethezav/gitleaks.‌
+• Key Info: A SAST tool for detecting hardcoded secrets (passwords, API keys, tokens) in git repositories, files, or stdin.‌
 
 ## Project Structure
 
