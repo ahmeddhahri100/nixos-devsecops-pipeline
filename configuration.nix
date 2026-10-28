@@ -1,1 +1,1 @@
-so here you can put the officially content of configuration.nix 
+so here you can put the official configuration content into the configuration.nix 
