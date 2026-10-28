@@ -1,4 +1,4 @@
-## Edit this configuration file to define what should be installed on
+# Edit this configuration file to define what should be installed on
 # your system. Help is available in the configuration.nix(5) man page, on
 # https://search.nixos.org/options and in the NixOS manual (`nixos-help`).
 
@@ -19,20 +19,7 @@
 
   networking = {
     hostName = "nixos"; # Define your hostname.
-    # wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-
-    # Configure network proxy if necessary
-    # proxy.default = "http://user:password@proxy:port/";
-    # proxy.noProxy = "127.0.0.1,localhost,internal.domain";
-
-    # Enable networking
     networkmanager.enable = true;
-
-    # Open ports in the firewall.
-    # firewall.allowedTCPPorts = [ ... ];
-    # firewall.allowedUDPPorts = [ ... ];
-    # Or disable the firewall altogether.
-    # firewall.enable = false;
   };
 
   # Set your time zone.
@@ -41,7 +28,6 @@
   # Select internationalisation properties.
   i18n = {
     defaultLocale = "en_US.UTF-8";
-
     extraLocaleSettings = {
       LC_ADDRESS = "ar_TN.UTF-8";
       LC_IDENTIFICATION = "ar_TN.UTF-8";
@@ -83,9 +69,6 @@
       # jack.enable = true;
     };
 
-    # Enable touchpad support (enabled default in most desktopManager).
-    # libinput.enable = true;
-
     # Enable the OpenSSH daemon.
     openssh.enable = true;
   };
@@ -96,7 +79,10 @@
   users.users."dhahri" = {
     isNormalUser = true;
     description = "dhahri";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+    ];
     packages = with pkgs; [
       git
     ];
@@ -106,24 +92,10 @@
   programs.firefox.enable = true;
 
   # List packages installed in system profile.
-  # You can use https://search.nixos.org/ to find more packages (and options).
   environment.systemPackages = with pkgs; [
-    vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    vim # Do not forget to add an editor to edit configuration.nix!
     wget
   ];
-
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
-
-  # Copy the NixOS configuration file and link it from the resulting system
-  # (/run/current-system/configuration.nix). This is useful in case you
-  # accidentally delete configuration.nix.
-  # system.copySystemConfiguration = true;
 
   # This option defines the first version of NixOS you have installed on this
   # particular machine, and is used to maintain compatibility with application
@@ -131,8 +103,5 @@
   #
   # Do NOT change this value unless you have manually inspected all the changes
   # it would make to your configuration, and migrated your data accordingly.
-  #
-  # For more information, see `man configuration.nix` or
-  # https://nixos.org/manual/nixos/stable/options#opt-system.stateVersion .
   system.stateVersion = "26.05"; # Did you read the comment?
 }
